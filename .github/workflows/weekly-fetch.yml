@@ -1,0 +1,32 @@
+name: Weekly Portfolio Data Fetch
+
+on:
+  schedule:
+    # Every Monday 05:00 UTC, before European markets open.
+    - cron: "0 5 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r scripts/requirements.txt
+
+      - run: python scripts/fetch_prices.py
+
+      - name: Commit and push updated portfolio data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/portfolio.xlsx
+          git diff --staged --quiet || git commit -m "Weekly portfolio data update ($(date -u +%F))"
+          git push
